@@ -1,0 +1,36 @@
+<%
+
+# Adapts sarge logstash.conf.erb to be used for service hosts
+
+@service_name = ENV['APP_NAME']
+@env = ENV['ENV']
+
+# scala repo contains multiple services therefore needs specific APP_NAME set
+if @service_name.nil? or @service_name == 'scala'
+  STDERR.puts 'APP_NAME should be set to service name'
+  exit -1
+end
+
+# Choose S3 output config values
+@s3_events_bucket = 'tt-events'
+@enable_s3_export = true
+@events_key_prefix = case @env
+  when 'stag', 'staging' then "staging/#{@service_name}/events-"
+  when 'prod', 'production' then "production/#{@service_name}/events-"
+  else "development/#{@service_name}/events-"
+end
+
+# Kinesis output config values
+@enable_kinesis_export = false
+@kinesis_region = case @env
+  when 'stag', 'staging', 'prod', 'production' then 'us-east-1'
+  else 'us-west-2'
+end
+
+@kinesis_stream_name = case @env
+  when 'stag', 'staging' then 'staging_events_stream'
+  when 'prod', 'production' then 'production_events_stream'
+  else 'development_events_stream'
+end
+
+%>

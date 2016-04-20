@@ -1,0 +1,12 @@
+/var/log/thumbtack/logstash_events/events.log
+{
+    hourly
+    rotate 3
+
+    missingok
+    notifempty
+    compress
+    delaycompress
+
+    create 0644 root root
+}

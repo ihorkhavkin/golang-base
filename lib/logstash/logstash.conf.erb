@@ -1,0 +1,86 @@
+input {
+  file {
+    tags => "event"
+    # Follow only main and first rotated logs, next ones (*.2 etc.) are compressed
+    path => [
+      "/var/log/thumbtack/logstash_events/*.log",
+      "/var/log/thumbtack/logstash_events/*.log.1"
+    ]
+  }
+}
+
+filter {
+  json {
+    source => "message"
+    target => "data"
+  }
+
+  ruby {
+    code => "
+      partitionKey = nil
+      data = event['data']
+      # Use parsed JSON to form partitionKey
+      if !data.nil? && data.is_a?(Hash)
+        identifiers = data['identifiers']
+        if !identifiers.nil? && identifiers.is_a?(Hash)
+          partitionKey = identifiers['session']
+        end
+
+        # Try to use run_id if session was not available
+        if partitionKey.nil?
+          partitionKey = data['run_id']
+        end
+      end
+
+      if partitionKey.nil?
+        # Use random key if other methods failed
+        partitionKey = SecureRandom.hex
+      end
+
+      event['partitionKey'] = partitionKey
+      "
+  }
+
+  mutate {
+    # Clean up parsed JSON that was used for extracting partition key
+    remove_field => ["data"]
+    <% unless @service_name.nil? %>
+    # Save service name
+    add_field => { "service_name" => "<%= @service_name %>" }
+    <% end %>
+  }
+}
+
+output {
+  <% if @enable_kinesis_export %>
+  kinesis {
+    stream_name => "<%= @kinesis_stream_name %>"
+    region => "<%= @kinesis_region %>"
+    event_partition_keys => [ "[partitionKey]" ]
+    # Allow records to be retried for 1 year
+    record_ttl => 31536000000
+    # Cap rate for one Logstash agent to 90% Kinesis limits
+    rate_limit => 90
+    # Limit number of buffered records to prevent data loss on crash
+    max_pending_records => 200
+    aggregation_max_count => 15
+    collection_max_count => 15
+  }
+  <% end %>
+  <% if @enable_s3_export %>
+
+  s3 {
+    bucket => "<%= @s3_events_bucket %>"
+    prefix => "<%= @events_key_prefix %>"
+    codec => "json_lines"
+    # Attempt to reupload files when recovering after crash
+    restore => true
+    # 10 Mb as a limit for file size
+    size_file => 10485760
+    # 10 minute limit for buffering
+    time_file => 10
+    # Allow at most 1 file not being uploaded yet, otherwise - block pipeline
+    max_pending_files => 1
+  }
+  <% end %>
+}
