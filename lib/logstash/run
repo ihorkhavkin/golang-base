@@ -1,0 +1,3 @@
+#!/usr/bin/with-contenv bash
+cd /image/lib/logstash; cat vars.erb logstash.conf.erb | erb > /etc/logstash/conf.d/logstash.conf
+sh -c 'ulimit -v ${LS_PROCESS_MEMORY} && ulimit -n ${LS_HANDLES} && nice -n ${LS_NICE} /opt/logstash/bin/logstash agent -f /etc/logstash/conf.d/logstash.conf'

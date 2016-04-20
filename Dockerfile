@@ -70,39 +70,25 @@ RUN mkdir -p /etc/services.d/main
 # NOTE: s6 will expect executable /etc/services.d/main/run script based on #!/usr/bin/with-contenv bash
 
 # Ensure that failure of main process brings down container
-RUN echo "#!/usr/bin/execlineb -S0\n"\
-	"s6-svscanctl -t /var/run/s6/services"\
-	> /etc/services.d/main/finish
-RUN chmod +x /etc/services.d/main/finish
+COPY lib/logstash/finish /etc/services.d/main/finish
 
 # Logstash agent
 RUN mkdir -p /etc/services.d/logstash
 RUN mkdir -p /var/log/thumbtack/logstash_events
-RUN echo "#!/usr/bin/with-contenv bash\n"\
-	"cd /image/lib/logstash; cat vars.erb logstash.conf.erb | erb > /etc/logstash/conf.d/logstash.conf\n"\
-	"sh -c 'ulimit -v ${LS_PROCESS_MEMORY} && ulimit -n ${LS_HANDLES} && "\
-	"nice -n ${LS_NICE} /opt/logstash/bin/logstash agent -f ${LS_CONF_FILE} ${LS_OPTS}'"\
-	> /etc/services.d/logstash/run
-RUN chmod +x /etc/services.d/logstash/run
+COPY lib/logstash/run /etc/services.d/logstash/run
 
 # Redirect Logstash messages via s6-log if they escape to stdin/stderr
 RUN mkdir -p /etc/services.d/logstash/log
 RUN mkdir -p /var/log/logstash
-RUN echo "#!/usr/bin/with-contenv bash\n"\
-	"exec logutil-service /var/log/logstash"\
-	> /etc/services.d/logstash/log/run
 RUN chmod go+rw /var/log/logstash
-RUN chmod +x /etc/services.d/logstash/log/run
+COPY lib/logstash/log_run /etc/services.d/logstash/log/run
 
 # Cron
 RUN mkdir -p /etc/services.d/cron
-RUN echo "#!/usr/bin/with-contenv bash\n"\
-	"exec cron -f"\
-	> /etc/services.d/cron/run
-RUN chmod +x /etc/services.d/cron/run
+COPY lib/logstash/cron_run /etc/services.d/cron/run
 
 # s6 wrapper will use /etc/services.d/* to setup foreground processes
 ENTRYPOINT ["/init"]
 
 # Expose should be done by the service script
-# EXPOSE 3000
+# EXPOSE <<PORT>>
