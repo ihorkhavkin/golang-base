@@ -25,11 +25,11 @@ RUN apt-get update && apt-get install -y --no-install-recommends \
 	ruby \
 	&& rm -rf /var/lib/apt/lists/*
 
-ENV JAVA_HOME /usr/lib/jvm/java-7-openjdk-amd64
+RUN mkdir -p /image
+COPY . /image
+WORKDIR /image
 
-RUN mkdir -p /go/src/github.com/thumbtack/go
-COPY . /go/src/github.com/thumbtack/go
-WORKDIR /go/src/github.com/thumbtack/go
+ENV JAVA_HOME /usr/lib/jvm/java-7-openjdk-amd64
 
 COPY lib/logstash/logstash-output-kinesis-1.6.0-java-20151207-1515-a5f95370.gem \
 	/tmp/logstash-output-kinesis-1.6.0.gem
@@ -79,7 +79,7 @@ RUN chmod +x /etc/services.d/main/finish
 RUN mkdir -p /etc/services.d/logstash
 RUN mkdir -p /var/log/thumbtack/logstash_events
 RUN echo "#!/usr/bin/with-contenv bash\n"\
-	"cd /go/src/github.com/thumbtack/go/lib/logstash; cat vars.erb logstash.conf.erb | erb > /etc/logstash/conf.d/logstash.conf\n"\
+	"cd /image/lib/logstash; cat vars.erb logstash.conf.erb | erb > /etc/logstash/conf.d/logstash.conf\n"\
 	"sh -c 'ulimit -v ${LS_PROCESS_MEMORY} && ulimit -n ${LS_HANDLES} && "\
 	"nice -n ${LS_NICE} /opt/logstash/bin/logstash agent -f ${LS_CONF_FILE} ${LS_OPTS}'"\
 	> /etc/services.d/logstash/run
