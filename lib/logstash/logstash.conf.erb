@@ -83,4 +83,31 @@ output {
     max_pending_files => 1
   }
   <% end %>
+  <% if @enable_kafka_export %>
+
+  kafka {
+    topic_id => "<%= @kafka_topic_id %>"
+    partition_key_format => "%{partitionKey}"
+    producer_type => "async"
+    broker_list => "<%= @kafka_bootstrap_hosts %>"
+    # Dropping messages instead of blocking to ensure S3 can proceed
+    # NOTE: we are optimizing for least impact on S3 output first!
+    queue_enqueue_timeout_ms => 0
+  }
+  <% end %>
+
+  statsd {
+    increment => [ "output_events" ]
+    <% if @service_name.nil? %>
+    sender => "website"
+    <% else %>
+    sender => "<%= @service_name %>"
+    # https://github.com/DataDog/docker-dd-agent#using-docker-host-ip
+    # https://github.com/docker/docker/issues/17305
+    # So it's the way recommended by Datadog, but we will have to either
+    # change it after EB is upgraded to Docker 1.9.0+
+    # or reconfigure Docker on EB via `--bip=172.17.0.1/16`
+    host => "172.17.42.1"
+    <% end %>
+  }
 }

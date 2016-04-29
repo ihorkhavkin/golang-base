@@ -1,7 +1,7 @@
 /var/log/thumbtack/logstash_events/events.log
 {
     hourly
-    rotate 3
+    rotate 24
 
     missingok
     notifempty
