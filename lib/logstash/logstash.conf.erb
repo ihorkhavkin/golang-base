@@ -68,7 +68,6 @@ output {
   }
   <% end %>
   <% if @enable_s3_export %>
-
   s3 {
     bucket => "<%= @s3_events_bucket %>"
     prefix => "<%= @events_key_prefix %>"
@@ -84,7 +83,6 @@ output {
   }
   <% end %>
   <% if @enable_kafka_export %>
-
   kafka {
     topic_id => "<%= @kafka_topic_id %>"
     partition_key_format => "%{partitionKey}"
@@ -95,7 +93,6 @@ output {
     queue_enqueue_timeout_ms => 0
   }
   <% end %>
-
   statsd {
     increment => [ "output_events" ]
     <% if @service_name.nil? %>

@@ -36,10 +36,10 @@ COPY lib/logstash/logstash-output-kinesis-1.6.0-java-20151207-1515-a5f95370.gem 
 RUN /opt/logstash/bin/plugin install \
 	/tmp/logstash-output-kinesis-1.6.0.gem
 
-COPY lib/logstash/logstash-output-s3-1.0.2.3-20160126-1615-643afc43.gem \
-	/tmp/logstash-output-s3-1.0.2.3.gem
+COPY lib/logstash/logstash-output-s3-1.0.2.9-20160511-1917-868b03a9.gem \
+	/tmp/logstash-output-s3-1.0.2.9.gem
 RUN /opt/logstash/bin/plugin install \
-	/tmp/logstash-output-s3-1.0.2.3.gem
+	/tmp/logstash-output-s3-1.0.2.9.gem
 
 RUN mkdir -p /etc/logrotate.d
 COPY lib/logstash/logstash_events /etc/logrotate.d/
