@@ -17,6 +17,7 @@ end
 @events_key_prefix = case @env
   when 'stag', 'staging' then "staging/#{@service_name}/events-"
   when 'prod', 'production' then "production/#{@service_name}/events-"
+  when 'sim', 'simulation' then "simulation/#{@service_name}/events-"
   else "development/#{@service_name}/events-"
 end
 
